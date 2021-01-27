@@ -18,11 +18,46 @@ Window {
         property alias responseText: networkRequest.responseText
         property url defaultUrl: "https://www.arcgis.com/sharing/rest?f=pjson"
         property string url: defaultUrl
+        property string user: ""
+        property string password: ""
+        property string realm: ""
         property string proxy
+        property bool loading: true
 
-        onProxyChanged: {
-            networking.proxy = proxy;
+        function save() {
+            if (loading) {
+                return;
+            }
+
+            let data = {
+                "url": properties.url,
+                "user" : properties.user,
+                "password" : properties.password,
+                "realm" : properties.realm,
+                "proxy" : properties.proxy
+            };
+
+            settings.setValue("properties", JSON.stringify(data));
         }
+
+        function load() {
+            loading = true;
+            let data = settings.value("properties");
+            data = JSON.parse(data);
+            if (!data) {
+                loading = false;
+                return;
+            }
+
+            properties.url = data["url"] || "";
+            networkRequest.user = data["user"] || "";
+            networkRequest.password = data["password"] || "";
+            networkRequest.realm = data["realm"] || "";
+            properties.proxy = data["proxy"] || "";
+            loading = false;
+        }
+
+        Component.onCompleted: Qt.callLater(load)
     }
 
     QtObject {
@@ -32,7 +67,6 @@ Window {
         property color textInputBackgroundColor: "#ffffee"
         property color textInputBorderColor: "#e0e0e0"
         property color errorTextColor: "red"
-
     }
 
     Page {
@@ -60,20 +94,20 @@ Window {
                 }
 
                 AppTextInput {
-                    source: networkRequest
+                    source: properties
                     role: "user"
                     placeholderText: qsTr("Specify Portal User")
                 }
 
                 AppTextInput {
-                    source: networkRequest
+                    source: properties
                     role: "password"
                     placeholderText: qsTr("Specify Portal Password")
                     echoMode: TextInput.Password
                 }
 
                 AppTextInput {
-                    source: networkRequest
+                    source: properties
                     role: "realm"
                     placeholderText: qsTr("Specify Portal Realm")
                 }
@@ -114,10 +148,21 @@ Window {
                 width: parent.width
 
                 Text {
-                    text: properties.errorString
+                    text: qsTr("Network Error %1: %2\n%3")
+                          .arg(properties.error)
+                          .arg(NetworkError.stringify(properties.error))
+                          .arg(properties.errorString)
                     visible: properties.error && properties.errorString
                     font.pointSize: styles.textPointSize
                     color: styles.errorTextColor
+                }
+
+                Text {
+                    text: qsTr("%1 (%2)")
+                    .arg(ReadyState.stringify(networkRequest.readyState))
+                    .arg(networkRequest.readyState)
+                    visible: networkRequest.busy
+                    font.pointSize: styles.textPointSize
                 }
 
             }
@@ -127,10 +172,11 @@ Window {
     NetworkRequest {
         id: networkRequest
 
-        onFinished: {
-            console.log("networkRequest.error: ", networkRequest.error);
-            console.log("networkRequest.errorString: ", networkRequest.errorString);
-            console.log("networkRequest.responseText: ", responseText);
+        onReadyStateChanged: {
+            if (readyState !== ReadyState.DONE)
+            {
+                return;
+            }
         }
     }
 
@@ -140,11 +186,21 @@ Window {
         useSystemProxy: true
     }
 
+    Settings {
+        id: settings
+    }
+
     function doSend() {
+        properties.save();
         networkRequest.url = !properties.url ? properties.defaultUrl : properties.url
-        console.log("properties.url: ", properties.url);
-        console.log("networkRequest.url: ", networkRequest.url);
-        console.log("networking.proxy: ", networking.proxy);
+        networkRequest.user = properties.user;
+        networkRequest.password = properties.password;
+        networkRequest.realm = properties.realm;
+        if (properties.proxy) {
+            networking.proxy = properties.proxy;
+        } else {
+            networking.useSystemProxy = true;
+        }
         networkRequest.send();
     }
 }

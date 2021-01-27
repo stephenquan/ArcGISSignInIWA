@@ -9,6 +9,7 @@ CONFIG += c++11
 SOURCES += \
         NetworkRequest.cpp \
         Networking.cpp \
+        Settings.cpp \
         main.cpp
 
 RESOURCES += qml.qrc
@@ -25,5 +26,10 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
+    EnumInfo.h \
+    NetworkError.h \
     NetworkRequest.h \
-    Networking.h
+    Networking.h \
+    ReadyState.h \
+    Settings.h \
+    SettingsFormat.h

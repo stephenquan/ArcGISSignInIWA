@@ -7,6 +7,8 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QAuthenticator>
+#include "NetworkError.h"
+#include "ReadyState.h"
 
 class NetworkRequest : public QObject
 {
@@ -18,27 +20,28 @@ class NetworkRequest : public QObject
     Q_PROPERTY(QString realm MEMBER m_Realm NOTIFY realmChanged)
     Q_PROPERTY(QByteArray response READ response NOTIFY responseChanged)
     Q_PROPERTY(QString responseText READ responseText NOTIFY responseChanged)
-    Q_PROPERTY(int error READ error NOTIFY errorChanged)
+    Q_PROPERTY(NetworkErrorEnum::NetworkError error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString errorString READ errorString NOTIFY errorStringChanged)
-    Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
+    Q_PROPERTY(ReadyStateEnum::ReadyState readyState READ readyState NOTIFY readyStateChanged)
+    Q_PROPERTY(bool busy READ busy NOTIFY readyStateChanged)
 
 public:
     NetworkRequest(QObject* parent = nullptr) :
         QObject(parent),
         m_Manager(nullptr),
         m_Reply(nullptr),
-        m_Error(0)
+        m_Error(NetworkErrorEnum::NoError),
+        m_ReadyState(ReadyStateEnum::UNSENT)
     {
     }
 
     Q_INVOKABLE void send()
     {
         setResponse(QByteArray());
-        setError(QNetworkReply::NoError);
+        setError(NetworkErrorEnum::NoError);
         setErrorString(QString());
+        setReadyState(ReadyStateEnum::OPENED);
         m_Reply = manager()->get(QNetworkRequest(m_Url));
-
-        emit busyChanged();
     }
 
 signals:
@@ -49,8 +52,7 @@ signals:
     void responseChanged();
     void errorChanged();
     void errorStringChanged();
-    void busyChanged();
-    void finished();
+    void readyStateChanged();
 
 protected slots:
     void onAuthenticationRequired(QNetworkReply *reply, QAuthenticator *authenticator)
@@ -69,14 +71,13 @@ protected slots:
         }
 
         setResponse(m_Reply->readAll());
-        setError(m_Reply->error());
+        setError(static_cast<NetworkErrorEnum::NetworkError>(m_Reply->error()));
         setErrorString(m_Reply->errorString());
 
         m_Reply->deleteLater();
         m_Reply = nullptr;
 
-        emit busyChanged();
-        emit finished();
+        setReadyState(ReadyStateEnum::DONE);
     }
 
 protected:
@@ -87,14 +88,15 @@ protected:
     QString m_Password;
     QString m_Realm;
     QByteArray m_Response;
-    int m_Error;
+    NetworkErrorEnum::NetworkError m_Error;
     QString m_ErrorString;
+    ReadyStateEnum::ReadyState m_ReadyState;
 
     QByteArray response() const { return m_Response; }
     QString responseText() const { return QString::fromUtf8(m_Response); }
 
-    int error() const { return m_Error; }
-    void setError(int error)
+    NetworkErrorEnum::NetworkError error() const { return m_Error; }
+    void setError(NetworkErrorEnum::NetworkError error)
     {
         if (m_Error == error)
         {
@@ -119,7 +121,31 @@ protected:
         emit errorStringChanged();
     }
 
-    bool busy() const { return m_Reply != nullptr; }
+    ReadyStateEnum::ReadyState readyState() const { return m_ReadyState; }
+    void setReadyState(ReadyStateEnum::ReadyState readyState)
+    {
+        if (m_ReadyState == readyState)
+        {
+            return;
+        }
+
+        m_ReadyState = readyState;
+
+        emit readyStateChanged();
+    }
+
+    bool busy() const
+    {
+        switch (m_ReadyState)
+        {
+        case ReadyStateEnum::UNSENT:
+        case ReadyStateEnum::DONE:
+            return false;
+
+        default:
+            return true;
+        }
+    }
 
     QNetworkAccessManager* manager()
     {
