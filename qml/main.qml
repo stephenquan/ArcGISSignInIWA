@@ -74,7 +74,7 @@ Window {
                 }
 
                 AppTextInput {
-                    source: netwokring
+                    source: networking
                     role: "proxy"
                     placeholderText: qsTr("Specify Proxy")
                 }
@@ -111,10 +111,6 @@ Window {
     NetworkRequest {
         id: networkRequest
 
-        onUrlChanged: {
-            console.log("networkRequest.url: ", url);
-        }
-
         onFinished: {
             console.log("networkRequest.error: ", networkRequest.error);
             console.log("networkRequest.errorString: ", networkRequest.errorString);
@@ -129,7 +125,9 @@ Window {
     }
 
     function doSend() {
-        networkRequest.url = properties.url || properties.defaultUrl;
+        networkRequest.url = !properties.url ? properties.defaultUrl : properties.url
+        console.log("properties.url: ", properties.url);
+        console.log("networkRequest.url: ", networkRequest.url);
         networkRequest.send();
     }
 }
