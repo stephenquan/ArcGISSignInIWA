@@ -17,7 +17,12 @@ Window {
         property alias errorString: networkRequest.errorString
         property alias responseText: networkRequest.responseText
         property url defaultUrl: "https://www.arcgis.com/sharing/rest?f=pjson"
-        property url url: defaultUrl
+        property string url: defaultUrl
+        property string proxy
+
+        onProxyChanged: {
+            networking.proxy = proxy;
+        }
     }
 
     QtObject {
@@ -74,7 +79,7 @@ Window {
                 }
 
                 AppTextInput {
-                    source: networking
+                    source: properties
                     role: "proxy"
                     placeholderText: qsTr("Specify Proxy")
                 }
@@ -87,8 +92,19 @@ Window {
                     onClicked: doSend()
                 }
 
-                AppTextInput {
-                    text: properties.responseText
+                Frame {
+                    Layout.fillWidth: true
+
+                    background: Rectangle {
+                        color: styles.textInputBackgroundColor
+                        border.color: styles.textInputBorderColor
+                    }
+
+                    Text {
+                        text: properties.responseText
+                        font.pointSize: styles.textPointSize
+                        wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                    }
                 }
             }
         }
@@ -128,6 +144,7 @@ Window {
         networkRequest.url = !properties.url ? properties.defaultUrl : properties.url
         console.log("properties.url: ", properties.url);
         console.log("networkRequest.url: ", networkRequest.url);
+        console.log("networking.proxy: ", networking.proxy);
         networkRequest.send();
     }
 }

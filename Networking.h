@@ -11,6 +11,7 @@
 #include <QNetworkProxy>
 #include <QQmlEngine>
 #include <QJSEngine>
+#include <QDebug>
 
 class Networking : public QObject
 {

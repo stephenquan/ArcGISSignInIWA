@@ -38,6 +38,10 @@ Frame {
                 font.pointSize: styles.textPointSize
                 selectByMouse: true
 
+                onTextChanged: {
+                    source[role] = text;
+                }
+
                 onAccepted: {
                     source[role] = text;
                     text = Qt.binding( () => appTextInput.text );
