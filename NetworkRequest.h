@@ -35,8 +35,9 @@ public:
     {
     }
 
-    Q_INVOKABLE void send()
+    Q_INVOKABLE void send(const QVariant& data = QVariant())
     {
+        Q_UNUSED(data)
         setResponse(QByteArray());
         setError(NetworkErrorEnum::NoError);
         setErrorString(QString());

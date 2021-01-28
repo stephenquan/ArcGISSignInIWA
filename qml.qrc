@@ -1,6 +1,11 @@
 <RCC>
     <qresource prefix="/">
         <file>qml/main.qml</file>
+        <file>qml/AppComboBox.qml</file>
         <file>qml/AppTextInput.qml</file>
+        <file>qml/PortalProperties.qml</file>
+        <file>qml/SignInApp.qml</file>
+        <file>qml/SignInPage.qml</file>
+        <file>qml/UserInfo.qml</file>
     </qresource>
 </RCC>

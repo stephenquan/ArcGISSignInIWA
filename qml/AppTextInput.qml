@@ -13,6 +13,8 @@ Frame {
     property string placeholderText
     property url iconSource
 
+    activeFocusOnTab: true
+
     Layout.fillWidth: true
 
     signal accepted()
